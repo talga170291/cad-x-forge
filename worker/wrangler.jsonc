@@ -4,7 +4,7 @@
   "compatibility_date": "2025-01-01",
   "observability": { "enabled": true },
   "d1_databases": [
-    { "binding": "DB", "database_name": "cad-x-forge", "database_id": "ЗАМЕНИТЕ_НА_ID_БАЗЫ_D1", "migrations_dir": "migrations" }
+    { "binding": "DB", "database_name": "cad-x-forge", "database_id": "f5803fca-969e-413b-b9b6-4c9aa7ec3ba5", "migrations_dir": "migrations" }
   ],
   "r2_buckets": [
     { "binding": "FILES", "bucket_name": "cad-x-forge-files" }
