@@ -4,6 +4,8 @@ import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import { readFileSync } from 'node:fs';
 import { createHmac } from 'node:crypto';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import worker from '../src/index.ts';
 import { makeDB, makeR2 } from './shim.ts';
 
@@ -12,8 +14,8 @@ const ADMIN = { id: 1001, first_name: 'Admin', language_code: 'ru' };
 const BUYER = { id: 2002, first_name: 'Anna', username: 'anna', language_code: 'ru' };
 const PDF = new TextEncoder().encode('%PDF-1.4 integration');
 const PNG = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 1, 2, 3, 4]);
-const root = new URL('../../', import.meta.url).pathname;
-const file = (p: string) => readFileSync(root + p, 'utf8');
+const root = fileURLToPath(new URL('../../', import.meta.url));
+const file = (p: string) => readFileSync(join(root, p), 'utf8');
 const scripts = (html: string) => html.split('<script>')[1].split('</script>')[0];
 
 function initData(user: any) {
@@ -24,7 +26,7 @@ function initData(user: any) {
 }
 const tgLog: any[] = [];
 function makeEnv() {
-  return { DB: makeDB(new URL('../migrations', import.meta.url).pathname), FILES: makeR2(), BOT_TOKEN: BOT, WEBHOOK_SECRET: 'whsec', ADMIN_TELEGRAM_IDS: '1001', DOWNLOAD_SIGNING_KEY: 'k', ALLOWED_ORIGIN: 'https://x.github.io', WEBAPP_URL: 'https://x.github.io/app/', ADMIN_URL: 'https://x.github.io/app/admin/' } as any;
+  return { DB: makeDB(fileURLToPath(new URL('../migrations', import.meta.url))), FILES: makeR2(), BOT_TOKEN: BOT, WEBHOOK_SECRET: 'whsec', ADMIN_TELEGRAM_IDS: '1001', DOWNLOAD_SIGNING_KEY: 'k', ALLOWED_ORIGIN: 'https://x.github.io', WEBAPP_URL: 'https://x.github.io/app/', ADMIN_URL: 'https://x.github.io/app/admin/' } as any;
 }
 function makeCtx(env: any, user: any) {
   const els: any = {}; const mk = () => ({ innerHTML: '', textContent: '', value: '', classList: { add() {}, remove() {} }, dataset: {}, querySelector: () => null });

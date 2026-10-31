@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createHmac } from 'node:crypto';
+import { fileURLToPath } from 'node:url';
 import worker from '../src/index.ts';
 import { verifyInitData } from '../src/auth.ts';
 import { makeDB, makeR2 } from './shim.ts';
@@ -29,7 +30,7 @@ const tgCalls: any[] = [];
 const sent = (chat: number) => tgCalls.filter((c) => c.method === 'sendMessage' && c.body.chat_id === chat);
 
 function setup(extra: any = {}) {
-  const env: any = { DB: makeDB(new URL('../migrations', import.meta.url).pathname), FILES: makeR2(), BOT_TOKEN: BOT, WEBHOOK_SECRET: 'whsec', ADMIN_TELEGRAM_IDS: '1001', DOWNLOAD_SIGNING_KEY: 'sign-key', ALLOWED_ORIGIN: 'https://x.github.io', WEBAPP_URL: 'https://x.github.io/app/', ADMIN_URL: 'https://x.github.io/app/admin/', ...extra };
+  const env: any = { DB: makeDB(fileURLToPath(new URL('../migrations', import.meta.url))), FILES: makeR2(), BOT_TOKEN: BOT, WEBHOOK_SECRET: 'whsec', ADMIN_TELEGRAM_IDS: '1001', DOWNLOAD_SIGNING_KEY: 'sign-key', ALLOWED_ORIGIN: 'https://x.github.io', WEBAPP_URL: 'https://x.github.io/app/', ADMIN_URL: 'https://x.github.io/app/admin/', ...extra };
   return env;
 }
 async function call(env: any, method: string, path: string, o: any = {}) {
