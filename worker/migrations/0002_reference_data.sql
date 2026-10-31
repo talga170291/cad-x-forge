@@ -25,8 +25,11 @@ INSERT INTO sizes(group_id,label,sort) WITH RECURSIVE n(x) AS (SELECT 44 UNION A
   SELECT (SELECT id FROM size_groups WHERE slug='men'), x, x FROM n;
 INSERT INTO sizes(group_id,label,sort) WITH RECURSIVE n(x) AS (SELECT 28 UNION ALL SELECT x+2 FROM n WHERE x<40)
   SELECT (SELECT id FROM size_groups WHERE slug='kids'), x, x FROM n;
-INSERT INTO sizes(group_id,label,sort) SELECT g.id, v.l, v.s FROM size_groups g,
-  (SELECT 'XS' l,1 s UNION ALL SELECT 'S',2 UNION ALL SELECT 'M',3 UNION ALL SELECT 'L',4 UNION ALL SELECT 'XL',5 UNION ALL SELECT 'XXL',6 UNION ALL SELECT '3XL',7) v
+WITH letter_sizes(l,s) AS (VALUES
+  ('XS',1),('S',2),('M',3),('L',4),('XL',5),('XXL',6),('3XL',7)
+)
+INSERT INTO sizes(group_id,label,sort)
+  SELECT g.id, v.l, v.s FROM size_groups g CROSS JOIN letter_sizes v
   WHERE g.slug='letters';
 
 INSERT INTO height_groups(slug,name_ru,name_kk,name_en,sort) VALUES
