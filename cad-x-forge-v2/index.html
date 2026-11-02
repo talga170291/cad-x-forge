@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>CAD x FORGE</title>
+<style>
+:root{--bg:#fff;--sf:#fff;--tx:#000;--mu:#777;--ln:#e4e4e4;--ac:#000;--as:#00000008;--rd:#000;--rs:#f4f4f4;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.45 "Avenir Next","Segoe UI",system-ui,-apple-system,Roboto,sans-serif}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--bg);z-index:10}
+#app{max-width:520px;margin:0 auto;min-height:100vh;padding-bottom:84px}
+:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+.hd{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--bg);border-bottom:1px solid var(--ln)}
+.lg{font-size:17px;letter-spacing:.03em}.lg i{font-style:normal;color:var(--rd);margin:0 2px}
+.ib{border:1px solid var(--ln);background:var(--sf);color:var(--tx);border-radius:10px;min-width:36px;height:36px;font:inherit;cursor:pointer}
+.h{font-size:22px;font-weight:700;letter-spacing:-.02em;margin:0;padding:14px 14px 6px}.h3{font-size:15px;margin:18px 14px 6px}
+.pd{padding:0 14px;margin:8px 0}.ar{font-size:12px;color:var(--mu);font-variant-numeric:tabular-nums}.pr{color:var(--ac);font-weight:700}.bd{font-size:11px;color:var(--ac);margin-left:6px}
+.in{width:100%;margin-top:8px;padding:11px 14px;border:1px solid var(--ln);border-radius:12px;background:var(--sf);color:var(--tx);font:inherit}
+.rw{display:flex;gap:8px;overflow-x:auto;padding:5px 14px;scrollbar-width:none;align-items:center}.rw>.ar{flex:none}
+.ch{flex:none;padding:7px 12px;border:1px solid var(--ln);border-radius:99px;background:var(--sf);color:var(--tx);font:inherit;font-size:13px;cursor:pointer}.ch.on{background:var(--ac);border-color:var(--ac);color:var(--bg)}
+.gd{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:10px 14px}
+.cd{background:var(--sf);border:1px solid var(--ln);border-radius:14px;overflow:hidden;cursor:pointer}
+.im{aspect-ratio:5/6;background-color:var(--sf);background-image:linear-gradient(var(--ln) 1px,transparent 1px),linear-gradient(90deg,var(--ln) 1px,transparent 1px);background-size:20px 20px;display:grid;place-items:center}
+.im svg{width:78%}.im.th{width:64px;flex:none;aspect-ratio:1;border-radius:10px}.im.big{aspect-ratio:1;width:100%}
+.g{fill:var(--rs);stroke:var(--rd);stroke-width:2;stroke-linejoin:round}.d{fill:none;stroke:var(--ac);stroke-width:1.3;stroke-dasharray:4 3}.pp{fill:var(--rs);stroke:var(--rd);stroke-width:1.6}.tn{fill:var(--mu);font:11px sans-serif;text-anchor:middle}
+.bt{border:0;border-radius:12px;padding:13px 16px;font:inherit;font-weight:600;background:var(--ac);color:var(--bg);cursor:pointer}.bt.s{background:var(--sf);color:var(--tx);border:1px solid var(--ln)}.bt:disabled{opacity:.55;cursor:default}
+.sp{display:grid;grid-template-columns:auto 1fr;gap:6px 16px;padding:12px 14px;margin:8px 14px;background:var(--sf);border:1px solid var(--ln);border-radius:14px}.sp span{color:var(--mu)}
+.fr{display:flex;align-items:center;gap:8px;padding:8px 0;border-top:1px solid var(--ln)}.fr>:first-child{flex:1}
+.li{display:flex;gap:12px;align-items:center;padding:10px;margin:0 14px 10px;background:var(--sf);border:1px solid var(--ln);border-radius:14px}.li>div:nth-child(2){flex:1}
+.bx{margin:0 14px 10px;padding:12px;background:var(--sf);border:1px solid var(--ln);border-radius:14px}
+.rt{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px}.em{text-align:center;padding:40px 14px;color:var(--mu)}
+details{background:var(--sf);border:1px solid var(--ln);border-radius:12px;padding:10px 14px;margin:0 14px 8px}summary{cursor:pointer;font-weight:600}details p{margin:8px 0 0;color:var(--mu)}
+.cta{position:fixed;left:0;right:0;bottom:0;max-width:520px;margin:0 auto;display:flex;gap:10px;padding:10px 14px calc(10px + env(safe-area-inset-bottom,0px));background:var(--sf);border-top:1px solid var(--ln);z-index:6}
+.nv{position:fixed;left:0;right:0;bottom:0;background:var(--sf);border-top:1px solid var(--ln);padding-bottom:env(safe-area-inset-bottom,0px);z-index:6}.nv>div{display:flex;max-width:520px;margin:0 auto}
+.nv button{flex:1;border:0;background:none;color:var(--mu);font:inherit;font-size:11px;padding:8px 0;display:flex;flex-direction:column;align-items:center;gap:2px;position:relative;cursor:pointer}.nv .on{color:var(--ac)}.nv span{font-size:18px}.nv em{position:absolute;top:4px;left:56%;background:var(--rd);color:#fff;font-style:normal;font-size:10px;min-width:16px;border-radius:8px;text-align:center}
+.ov{position:fixed;inset:0;background:#0009;display:flex;align-items:flex-end;justify-content:center;z-index:20}.bk{position:absolute;inset:0}.sh{position:relative;width:100%;max-width:520px;background:var(--sf);border-radius:18px 18px 0 0;padding:6px 16px calc(18px + env(safe-area-inset-bottom,0px))}.sh h3{margin:12px 0}.sh .bt{width:100%;margin-top:8px}
+#toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:var(--tx);color:var(--bg);padding:10px 14px;border-radius:10px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:30;max-width:90%;text-align:center}#toast.on{opacity:1}
+body{font-family:"Helvetica Neue",Helvetica,Arial,"Segoe UI",sans-serif}
+.hd{border-bottom:1px solid #000}.lg{letter-spacing:.22em;text-transform:uppercase;font-weight:700;font-size:15px}.lg i{color:inherit}
+.h{background:#000;color:#fff;margin:16px 14px 8px;padding:10px 14px;font-size:13px;letter-spacing:.12em;text-transform:uppercase;font-weight:600}
+.h2{font-size:22px;font-weight:600;letter-spacing:-.01em;margin:0}
+.h3{font-size:12px;letter-spacing:.12em;text-transform:uppercase;font-weight:600;padding-bottom:6px;border-bottom:1px solid #000;margin:22px 14px 6px}
+.cd,.bx,.li,.sp,details,.in,.ib,.bt,.ch,.im.th,.sh,.cta{border-radius:0}.ch{border-color:#bbb}.ch.on{border-color:#000}
+.im{background-image:none;background-color:#fafafa}.im img{width:100%;height:100%;object-fit:cover;display:block}.im.big img{object-fit:contain}
+.d{stroke:#777}.nv{border-top:1px solid #000}.nv button{text-transform:uppercase;letter-spacing:.06em;font-size:10px}
+.gd{grid-template-columns:repeat(var(--cols,2),1fr)}.pr{color:#000}.bd{color:#000;border:1px solid #000;padding:0 4px}
+
+.ph{display:grid;place-items:center;width:100%;height:100%;color:#777;font-size:11px;letter-spacing:.14em;text-transform:uppercase}.ph svg{width:46%}
+.fx{border:1px solid var(--ln);margin:6px 14px;padding:8px 10px}.fx .rw{padding:3px 0}.fx select,.fx input{border:1px solid #bbb;padding:7px;font:inherit;border-radius:0;background:#fff;color:#000}.pi{width:96px}
+.sk{background:linear-gradient(90deg,#f4f4f4,#eaeaea,#f4f4f4);aspect-ratio:5/8;border:1px solid var(--ln)}.er{margin:14px;padding:12px;border:1px solid #000}.cd .im{aspect-ratio:4/5}.btn-row{display:flex;gap:8px;padding:4px 14px}
+
+/* ===== V3: шапка, язык, поиск, галерея, навигация, кнопки покупки ===== */
+body::before{background:#000}
+.hd{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;background:#000;color:#fff;border-bottom:0;padding:12px 14px;gap:8px}
+.hd .l{justify-self:start}.hd .r{justify-self:end}.hd .tt{font-weight:700;letter-spacing:.2em;text-transform:uppercase;text-align:center;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:54vw}.hd .tt img{height:20px;vertical-align:middle;margin-right:8px}
+.hd .ib{background:transparent;color:#fff;border-color:#ffffff55;font-size:20px}.hd .ib:empty{display:none}
+.lg3{display:inline-flex;border:1px solid #ffffff66}.lg3 button{background:none;border:0;color:#ffffffb0;padding:6px 7px;font:inherit;font-size:10px;letter-spacing:.06em;cursor:pointer}.lg3 .on{background:#fff;color:#000;font-weight:700}
+.bt.go{background:#16a34a;border-color:#16a34a;color:#fff}.bt:disabled{opacity:.45;cursor:default}.bt:active:not(:disabled),.cd:active{transform:scale(.98)}
+.sb{position:relative;margin-top:8px}.sb svg{position:absolute;left:12px;top:50%;margin-top:-9px;width:18px;height:18px;stroke:#777;fill:none;stroke-width:2}.sb .in{padding-left:38px;margin-top:0}
+.gal{position:relative}.gal .ga{position:absolute;top:50%;margin-top:-22px;width:40px;height:44px;border:0;background:#0007;color:#fff;font-size:26px;cursor:pointer}.gal .gl{left:0}.gal .gr{right:0}.gal .gc{position:absolute;bottom:8px;right:10px;background:#000a;color:#fff;font-size:11px;padding:2px 7px}
+.ch.na{color:#999;border-style:dashed;text-decoration:line-through}.ch i{font-size:9px;font-style:normal;margin-left:5px;display:inline-block;text-decoration:none}
+.nv{box-shadow:0 -6px 16px #0002;border-top:1px solid #000}.nv button{transition:transform .08s}.nv button:active{transform:translateY(2px) scale(.94)}
+.nv svg{width:23px;height:23px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}.nv span{width:46px;height:30px;display:grid;place-items:center;border-radius:15px;font-size:0}.nv .on span{background:#000;color:#fff;box-shadow:inset 0 2px 4px #0009}.nv em{left:58%}
+.tx{margin:6px 0}.pl{position:fixed;inset:0;background:#000d;z-index:25;display:grid;place-items:center;padding:12px}.pl>div{width:100%;max-width:520px}.pl video{width:100%;max-height:72vh;background:#000}.msg{margin:8px 14px;padding:8px 10px;border:1px solid #000;font-size:13px}.msg.w{border-color:#999;color:#666}
+.st{font-size:11px;color:#777}.bd.no{color:#777;border-color:#bbb}.cd .ab{position:absolute}.cd{position:relative}
+</style></head><body><div id="app"></div><div id="toast"></div>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="config.js"></script>
+<script src="api.js"></script>
+<script>
+const $=s=>document.querySelector(s),TG=window.Telegram&&Telegram.WebApp,API=window.cfxApi,U=window.cfxUrl;
+const esc=x=>String(x==null?'':x).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const LS={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+// ===== Все тексты интерфейса — в одном словаре (RU / EN / KAZ). Тексты страниц, меню и товаров редактируются в админке. =====
+const T={
+ru:{search:'Название, артикул, категория, тег',filters:'Фильтры',all:'Все',sort:'Сортировка',sort_featured:'Рекомендуемые',sort_new:'Новинки',sort_price_asc:'Цена ↑',sort_price_desc:'Цена ↓',sort_popular:'Популярные',audience:'Для кого',size:'Размер',height:'Рост',tag:'Тег',format:'Формат',price:'Цена, ★',from:'от',to:'до',featuredOnly:'Только избранные',reset:'Сбросить',loadMore:'Показать ещё',found:'Найдено',none:'Ничего не найдено. Измените запрос или сбросьте фильтры.',add:'В корзину',now:'Купить сейчас',inCart:'В корзине',own:'Уже куплено',openBuys:'Открыть покупки',sizes:'Размеры',heights:'Ростовки',includes:'Что входит',digital:'Цифровой товар: после оплаты файлы доступны в разделе «Покупки».',sku:'Артикул',tot:'Итого',co:'Оформить заказ',clr:'Очистить',rm:'Удалить',emp:'В корзине пока пусто',cart:'Корзина',buys:'Покупки',pay:'Оплатить Stars',ord:'Заказ',get:'Скачать',watch:'Смотреть',nb:'Покупок пока нет',loading:'Загрузка…',retry:'Повторить',back:'Назад',na:'недоступно',soldout:'Недоступно',pick:'Выберите размер и рост',pickS:'Выберите размер',combo:'Это сочетание сейчас недоступно',okv:'Вариант выбран',errNetwork:'Нет связи с сервером. Проверьте интернет.',errSession:'Сессия недействительна. Откройте магазин из Telegram заново.',errItems:'Некоторые товары или варианты недоступны либо уже куплены. Корзина обновлена.',errFile:'Файл недоступен.',errNotFound:'Страница не найдена.',errMaint:'Магазин временно закрыт на обслуживание.',errRate:'Слишком много запросов. Подождите минуту.',errVar:'Выберите размер и рост товара.',errGeneric:'Что-то пошло не так. Попробуйте ещё раз.',openInTg:'Откройте магазин через Telegram, чтобы оплатить.',payCancelled:'Оплата отменена.',payFailed:'Оплата не прошла.',payOk:'Оплата прошла! Файлы — в разделе «Покупки».',payWait:'Платёж получен, идёт обработка. Проверьте «Покупки» через минуту.',docs:'Документы',lang:'Язык',noImg:'Нет изображения',openTg:'Покупки доступны только внутри Telegram.',unavail:'Нет файлов',close:'Закрыть'},
+kk:{search:'Атауы, артикул, санат, тег',filters:'Сүзгілер',all:'Барлығы',sort:'Сұрыптау',sort_featured:'Ұсынылған',sort_new:'Жаңалар',sort_price_asc:'Баға ↑',sort_price_desc:'Баға ↓',sort_popular:'Танымал',audience:'Кімге',size:'Өлшем',height:'Бой',tag:'Тег',format:'Формат',price:'Баға, ★',from:'бастап',to:'дейін',featuredOnly:'Тек таңдаулылар',reset:'Тазарту',loadMore:'Тағы көрсету',found:'Табылды',none:'Ештеңе табылмады. Сұранысты өзгертіңіз немесе сүзгілерді тазалаңыз.',add:'Себетке',now:'Қазір сатып алу',inCart:'Себетте',own:'Сатып алынған',openBuys:'Сатып алғандарымды ашу',sizes:'Өлшемдер',heights:'Бой аралығы',includes:'Не кіреді',digital:'Сандық тауар: төлемнен кейін файлдар «Сатып алу» бөлімінде қолжетімді.',sku:'Артикул',tot:'Барлығы',co:'Тапсырыс беру',clr:'Тазарту',rm:'Жою',emp:'Себет бос',cart:'Себет',buys:'Сатып алу',pay:'Stars-пен төлеу',ord:'Тапсырыс',get:'Жүктеу',watch:'Көру',nb:'Әзірге сатып алу жоқ',loading:'Жүктелуде…',retry:'Қайталау',back:'Артқа',na:'қолжетімсіз',soldout:'Қолжетімсіз',pick:'Өлшем мен бойды таңдаңыз',pickS:'Өлшемді таңдаңыз',combo:'Бұл үйлесім қазір қолжетімсіз',okv:'Нұсқа таңдалды',errNetwork:'Серверге қосылу мүмкін емес. Интернетті тексеріңіз.',errSession:'Сеанс жарамсыз. Дүкенді Telegram арқылы қайта ашыңыз.',errItems:'Кейбір тауарлар не нұсқалар қолжетімсіз немесе сатып алынған. Себет жаңартылды.',errFile:'Файл қолжетімсіз.',errNotFound:'Бет табылмады.',errMaint:'Дүкен уақытша жабық.',errRate:'Сұраныс тым көп. Бір минут күтіңіз.',errVar:'Тауардың өлшемі мен бойын таңдаңыз.',errGeneric:'Бірдеңе дұрыс болмады. Қайталап көріңіз.',openInTg:'Төлеу үшін дүкенді Telegram арқылы ашыңыз.',payCancelled:'Төлем тоқтатылды.',payFailed:'Төлем өтпеді.',payOk:'Төлем сәтті өтті! Файлдар «Сатып алу» бөлімінде.',payWait:'Төлем алынды, өңделуде. Бір минуттан кейін «Сатып алу» бөлімін тексеріңіз.',docs:'Құжаттар',lang:'Тіл',noImg:'Сурет жоқ',openTg:'Сатып алулар тек Telegram ішінде қолжетімді.',unavail:'Файлдар жоқ',close:'Жабу'},
+en:{search:'Name, SKU, category, tag',filters:'Filters',all:'All',sort:'Sort',sort_featured:'Featured',sort_new:'New',sort_price_asc:'Price ↑',sort_price_desc:'Price ↓',sort_popular:'Popular',audience:'For',size:'Size',height:'Height',tag:'Tag',format:'Format',price:'Price, ★',from:'from',to:'to',featuredOnly:'Featured only',reset:'Reset',loadMore:'Load more',found:'Found',none:'Nothing found. Change the query or reset the filters.',add:'Add to cart',now:'Buy now',inCart:'In cart',own:'Already purchased',openBuys:'Open my purchases',sizes:'Sizes',heights:'Heights',includes:'What’s included',digital:'Digital product: after payment the files are available in Purchases.',sku:'SKU',tot:'Total',co:'Checkout',clr:'Clear',rm:'Remove',emp:'Your cart is empty',cart:'Cart',buys:'Purchases',pay:'Pay with Stars',ord:'Order',get:'Download',watch:'Watch',nb:'No purchases yet',loading:'Loading…',retry:'Retry',back:'Back',na:'unavailable',soldout:'Unavailable',pick:'Choose size and height',pickS:'Choose a size',combo:'This combination is currently unavailable',okv:'Variant selected',errNetwork:'Cannot reach the server. Check your connection.',errSession:'Session is invalid. Reopen the store from Telegram.',errItems:'Some items or variants are unavailable or already purchased. Cart updated.',errFile:'File unavailable.',errNotFound:'Page not found.',errMaint:'The store is temporarily closed for maintenance.',errRate:'Too many requests. Wait a minute.',errVar:'Choose the size and height of the product.',errGeneric:'Something went wrong. Please try again.',openInTg:'Open the store in Telegram to pay.',payCancelled:'Payment cancelled.',payFailed:'Payment failed.',payOk:'Payment successful! Your files are in Purchases.',payWait:'Payment received and is being processed. Check Purchases in a minute.',docs:'Documents',lang:'Language',noImg:'No image',openTg:'Purchases are available only inside Telegram.',unavail:'No files',close:'Close'}};
+let LANG='ru';const t=k=>{const v=(T[LANG]||{})[k];return v!==undefined?v:(T.en[k]!==undefined?T.en[k]:k)};
+const LBL={ru:'RU',en:'EN',kk:'KAZ'};
+const nm=(o,p)=>o?(o[(p||'name')+'_'+LANG]||o[(p||'name')+'_ru']||o[(p||'name')+'_en']||''):'';
+const ICON={catalog:'<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>',cart:'<circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M2 3h3l2.4 11.2a1 1 0 0 0 1 .8h9.2a1 1 0 0 0 1-.8L20 7H6"/>',bag:'<path d="M4 10h16l-1.2 10H5.2z"/><path d="M8 10V8a4 4 0 0 1 8 0v2"/><path d="M10 10V8.6a2 2 0 0 1 4 0V10"/>',info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.01"/>',home:'<path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',heart:'<path d="M12 21s-8-5.2-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 10c0 5.8-8 11-8 11z"/>',star:'<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/>',user:'<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',chat:'<path d="M4 5h16v11H9l-5 4z"/>',book:'<path d="M4 5a2 2 0 0 1 2-2h6v17H6a2 2 0 0 0-2 2zM20 5a2 2 0 0 0-2-2h-6v17h6a2 2 0 0 1 2 2z"/>',video:'<rect x="3" y="6" width="13" height="12" rx="2"/><path d="M16 10l5-3v10l-5-3"/>',scissors:'<circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4L8.1 15.9M14.5 14.5L20 20M8.1 8.1L12 12"/>',tag:'<path d="M3 12V3h9l9 9-9 9z"/><circle cx="7.5" cy="7.5" r="1.2"/>',phone:'<path d="M5 3h4l2 5-2.5 1.5a11 11 0 0 0 6 6L16 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 5a2 2 0 0 1 2-2z"/>',mail:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/>',link:'<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',gift:'<rect x="3" y="8" width="18" height="4"/><path d="M5 12v9h14v-9M12 8v13"/><path d="M12 8C10 3 7 4 8 6s4 2 4 2zm0 0c2-5 5-4 4-2s-4 2-4 2z"/>',search:'<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>'};
+const svg=n=>`<svg viewBox="0 0 24 24" aria-hidden="true">${ICON[n]||ICON.info}</svg>`;
+const S={tab:'cat',prev:'cat',boot:null,fac:null,err:null,showF:false,list:{items:[],total:0,page:1,limit:20,loading:false,err:null,tok:0},
+ f:{q:'',category:'',audience:'',size:'',height:'',tag:'',format:'',price_min:'',price_max:'',featured:'',sort:'featured'},
+ pid:null,prod:null,perr:null,img:0,sel:{size:0,height:0},cart:LS.get('cfx.cart2',[]),cartItems:[],buys:null,me:null,sheet:0,sy:0,page:null,perr2:null,player:null};
+const ck=c=>c.id+':'+(c.vid||0),saveCart=()=>LS.set('cfx.cart2',S.cart);
+const bought=pid=>!!(S.buys&&S.buys.items&&S.buys.items.some(i=>i.product_id==pid));
+const ownedV=(pid,vid)=>!!(S.buys&&S.buys.items&&S.buys.items.some(i=>i.product_id==pid&&(i.variant_id==null||(vid&&i.variant_id==vid))));
+const B=()=>S.boot||{categories:[],audiences:[],sizes:[],heights:[],tags:[],attributes:[],attribute_values:[],formats:[],settings:{},menu:[],pages:[]};
+const byId=(l,id)=>(l||[]).find(x=>x.id==id);
+const lab=(l,id)=>{const x=byId(B()[l],id);return x?x.label:''};
+const money=n=>'★ '+n,fsize=n=>n>1048576?(n/1048576).toFixed(1)+' MB':Math.max(1,Math.round(n/1024))+' KB';
+const errMsg=e=>({network:t('errNetwork'),unauthorized:t('errSession'),invalid_init_data:t('errSession'),init_data_expired:t('errSession'),forbidden:t('errSession'),items_unavailable:t('errItems'),variant_required:t('errVar'),invalid_variant:t('errItems'),file_unavailable:t('errFile'),not_purchased:t('errFile'),not_found:t('errNotFound'),maintenance:t('errMaint'),rate_limited:t('errRate')}[e&&e.code]||t('errGeneric'));
+let tm;function toast(m){const e=$('#toast');e.textContent=m;e.classList.add('on');clearTimeout(tm);tm=setTimeout(()=>e.classList.remove('on'),2800)}
+const PH='<div class="ph"><svg viewBox="0 0 200 240"><path class="g" d="M72 30L86 22Q100 36 114 22L128 30L123 92L152 214Q100 230 48 214L77 92Z"/></svg></div>';
+const imgT=(u,alt)=>u?`<img loading="lazy" src="${esc(U(u))}" alt="${esc(alt||'')}">`:PH;
+const vlabel=(s,h)=>[lab('sizes',s),lab('heights',h)].filter(Boolean).join(' / ');
+// ===== загрузка данных =====
+async function loadList(reset){const L=S.list,tok=++L.tok;if(reset){L.page=1;L.items=[]}L.loading=true;L.err=null;renderRes();
+ const p=new URLSearchParams();for(const k in S.f)if(S.f[k]!==''&&S.f[k]!=null)p.set(k,S.f[k]);p.set('page',L.page);
+ try{const r=await API('/api/products?'+p);if(tok!==L.tok)return;L.items=L.items.concat(r.items);L.total=r.total;L.limit=r.limit}catch(e){if(tok!==L.tok)return;L.err=e}L.loading=false;renderRes()}
+async function loadBuys(){if(!(TG&&TG.initData)){S.buys=null;return}try{S.buys=await API('/api/me/purchases')}catch(e){S.buys={items:[],err:e}}}
+async function loadCart(){if(!S.cart.length){S.cartItems=[];return}try{const r=await API('/api/products?limit=50&ids='+[...new Set(S.cart.map(c=>c.id))].join(','));S.cartItems=r.items;const ok=new Set(r.items.map(i=>i.id));const n=S.cart.length;S.cart=S.cart.filter(c=>ok.has(c.id)&&!ownedV(c.id,c.vid));saveCart();if(S.cart.length!==n)toast(t('errItems'))}catch(e){S.cartErr=e}}
+async function loadPage(slug){S.page=null;S.perr2=null;R();try{S.page=await API('/api/pages/'+encodeURIComponent(slug))}catch(e){S.perr2=e}R()}
+async function init(){try{TG&&TG.ready();TG&&TG.expand()}catch(e){}
+ R();
+ try{[S.boot,S.fac]=await Promise.all([API('/api/bootstrap'),API('/api/facets')])}catch(e){S.err=e;R();return}
+ const st=S.boot.settings,langs=st.languages||['ru','kk','en'];let l=LS.get('cfx.lang',null);
+ if(!l){const c=TG&&TG.initDataUnsafe&&TG.initDataUnsafe.user&&TG.initDataUnsafe.user.language_code;l=c&&langs.includes(c.slice(0,2))?c.slice(0,2):(langs.includes(st.default_lang)?st.default_lang:'en')}
+ LANG=langs.includes(l)?l:'en';
+ if(new URLSearchParams(location.search).get('tab')==='purchases')S.tab='buys';
+ R();loadList(true);
+ if(TG&&TG.initData){try{S.me=await API('/api/me');if(!LS.get('cfx.lang',null)&&S.me.user.lang&&langs.includes(S.me.user.lang))LANG=S.me.user.lang}catch(e){}await loadBuys();if(S.cart.length)await loadCart()}
+ else if(S.cart.length)await loadCart();
+ if(S.tab==='buys'||S.tab==='cart'){}
+ R()}
+// ===== шапка: чёрная, заголовок по центру; переключатель языка — только на главной странице =====
+const hd=(o)=>{o=o||{};const st=B().settings,langs=st.languages||['ru','kk','en'];
+ const left=o.back?`<button class="ib l" data-a="${o.back}" aria-label="${t('back')}">‹</button>`:'<span class="l"></span>';
+ const title=o.title!=null?esc(o.title):(st.logo?`<img src="${esc(U(st.logo))}" alt="">`:'')+esc(st.store_name||'CAD x FORGE');
+ const right=o.lang?`<span class="lg3 r">${['ru','en','kk'].filter(l=>langs.includes(l)).map(l=>`<button class="${LANG===l?'on':''}" data-a="setlang" data-v="${l}">${LBL[l]}</button>`).join('')}</span>`:'<span class="r"></span>';
+ return `<div class="hd">${left}<span class="tt">${title}</span>${right}</div>`};
+const chip=(a,k,v,on,l,na)=>`<button class="ch ${on?'on':''} ${na?'na':''}" data-a="${a}" data-k="${k}" data-v="${esc(v)}">${esc(l)}${na?`<i>${t('na')}</i>`:''}</button>`;
+function catChips(){const c=S.fac?S.fac.categories:[],cnt={};B().categories.forEach(x=>{const n=(c.find(y=>y.id==x.id)||{n:0}).n;cnt[x.id]=(cnt[x.id]||0)+n;if(x.parent_id)cnt[x.parent_id]=(cnt[x.parent_id]||0)+n});
+ return chip('f','category','',S.f.category==='',t('all'))+B().categories.filter(x=>cnt[x.id]>0).map(x=>chip('f','category',x.id,S.f.category==x.id,nm(x))).join('')}
+function filterPanel(){const F=S.fac||{},row=(label,html)=>html?`<div class="rw"><span class="ar">${label}</span>${html}</div>`:'';
+ const fa=(l,id)=>(F[l]||[]).find(x=>x.id==id);
+ const rel=(list,fl,key,labf)=>B()[list].filter(x=>fa(fl,x.id)).map(x=>chip('f',key,x.id,S.f[key]==x.id,labf?labf(x):x.label,fa(fl,x.id).a===0)).join('');
+ return `<div class="fx">${row(t('audience'),B().audiences.filter(x=>fa('audiences',x.id)).map(x=>chip('f','audience',x.id,S.f.audience==x.id,nm(x))).join(''))}${row(t('size'),rel('sizes','sizes','size'))}${row(t('height'),rel('heights','heights','height'))}${row(t('tag'),B().tags.filter(x=>fa('tags',x.id)).map(x=>chip('f','tag',x.id,S.f.tag==x.id,nm(x))).join(''))}${row(t('format'),B().formats.filter(x=>(F.formats||[]).some(y=>y.code==x.code)).map(x=>chip('f','format',x.code,S.f.format==x.code,x.label)).join(''))}
+ <div class="rw"><span class="ar">${t('price')}</span><input class="pi" type="number" min="0" data-p="price_min" placeholder="${t('from')}" value="${esc(S.f.price_min)}"><input class="pi" type="number" min="0" data-p="price_max" placeholder="${t('to')}" value="${esc(S.f.price_max)}"></div>
+ <div class="rw">${chip('f','featured','1',S.f.featured==='1',t('featuredOnly'))}<select data-s="sort" aria-label="${t('sort')}">${['featured','new','price_asc','price_desc','popular'].map(k=>`<option value="${k}" ${S.f.sort===k?'selected':''}>${t('sort_'+k)}</option>`).join('')}</select><button class="ch" data-a="reset">${t('reset')}</button></div></div>`}
+const vCat=()=>`<div style="padding:4px 14px"><div class="sb">${svg('search')}<input id="q" class="in" placeholder="${t('search')}" value="${esc(S.f.q)}" autocomplete="off"></div></div><div class="rw">${catChips()}</div><div class="btn-row"><button class="ch ${S.showF?'on':''}" data-a="showF">${t('filters')}</button></div>${S.showF?filterPanel():''}<div id="res"></div>`;
+const card=p=>`<div class="cd" data-a="open" data-v="${p.id}"><div class="im">${imgT(p.image,nm(p))}</div><div style="padding:10px"><div class="ar">${esc(p.sku)}</div><div>${esc(nm(p))}</div><span class="pr">${money(p.price_stars)}</span>${bought(p.id)?`<span class="bd">✓ ${t('own')}</span>`:!p.in_stock?`<span class="bd no">${t('soldout')}</span>`:''}</div></div>`;
+function renderRes(){const e=$('#res');if(!e)return;const L=S.list;
+ if(L.err){e.innerHTML=`<div class="er">${esc(errMsg(L.err))}<br><button class="bt s" data-a="retry" style="margin-top:8px">${t('retry')}</button></div>`;return}
+ let h=`<div class="ar" style="padding:8px 14px 0">${t('found')}: ${L.total}</div>`;
+ if(L.items.length)h+=`<div class="gd">${L.items.map(card).join('')}</div>`;else if(!L.loading)h+=`<div class="em">${t('none')}</div>`;
+ if(L.loading)h+=`<div class="gd">${'<div class="sk"></div>'.repeat(L.items.length?2:4)}</div>`;
+ else if(L.items.length<L.total)h+=`<div class="btn-row"><button class="bt s" style="flex:1" data-a="more">${t('loadMore')}</button></div>`;
+ e.innerHTML=h}
+// ===== карточка товара: варианты размер × рост =====
+function variantState(p){const vs=p.variants||[];if(!vs.length)return{has:false};
+ const order=l=>B()[l].map(x=>x.id),ix=(l,id)=>order(l).indexOf(id);
+ const sizes=[...new Set(vs.map(v=>v.size_id))].sort((a,b)=>ix('sizes',a)-ix('sizes',b)),heights=[...new Set(vs.map(v=>v.height_id).filter(Boolean))].sort((a,b)=>ix('heights',a)-ix('heights',b));
+ const hasH=heights.length>0,find=(s,h)=>vs.find(v=>v.size_id==s&&(v.height_id||0)==(h||0));
+ const s=S.sel.size,h=S.sel.height;let v=null,state='pick';
+ if(s&&(!hasH||h)){v=find(s,hasH?h:0)||null;state=v&&v.available?'ok':'na'}
+ const sizeNA=id=>!vs.some(x=>x.size_id==id&&x.available),heightNA=id=>s?!(find(s,id)&&find(s,id).available):!vs.some(x=>x.height_id==id&&x.available);
+ return{has:true,sizes,heights,hasH,v,state,sizeNA,heightNA}}
+function vPrd(){const p=S.prod;const head=hd({back:'back',title:p?p.sku:''});
+ if(S.perr)return head+`<div class="er">${esc(errMsg(S.perr))}</div>`;if(!p)return head+`<div class="gd"><div class="sk"></div></div>`;
+ const imgs=p.images,cur=imgs[S.img]||imgs[0],b=B(),vs=variantState(p);
+ const val=a=>{const v=byId(b.attribute_values,a.value_id);return v?esc(nm(v,'value')):esc(a.text_value)};
+ const attrs=p.attributes.map(a=>{const d=byId(b.attributes,a.attribute_id);return d?`<span>${esc(nm(d))}</span><b>${val(a)}</b>`:''}).join('');
+ const gal=`<div class="gal"><div class="im big">${imgT(cur&&cur.url,nm(p))}</div>${imgs.length>1?`<button class="ga gl" data-a="gprev" aria-label="‹">‹</button><button class="ga gr" data-a="gnext" aria-label="›">›</button><span class="gc">${(S.img%imgs.length)+1} / ${imgs.length}</span>`:''}</div>`;
+ let pick='',msg='',own=false,inCart=false,canBuy=true;
+ if(vs.has){
+  pick=`<h3 class="h3">${t('size')}</h3><div class="rw">${vs.sizes.map(id=>chip('sel','size',id,S.sel.size==id,lab('sizes',id),vs.sizeNA(id))).join('')}</div>`+(vs.hasH?`<h3 class="h3">${t('height')}</h3><div class="rw">${vs.heights.map(id=>chip('sel','height',id,S.sel.height==id,lab('heights',id),vs.heightNA(id))).join('')}</div>`:'');
+  own=vs.v?ownedV(p.id,vs.v.id):false;inCart=vs.v?S.cart.some(c=>c.id===p.id&&c.vid===vs.v.id):false;
+  canBuy=vs.state==='ok'&&!own;
+  msg=vs.state==='pick'?`<div class="msg w">${t(vs.hasH?'pick':'pickS')}</div>`:vs.state==='na'?`<div class="msg w">${t('combo')}</div>`:own?`<div class="msg">✓ ${t('own')}</div>`:'';
+ }else{own=bought(p.id);inCart=S.cart.some(c=>c.id===p.id);
+  if(p.sizes.length||p.heights.length)pick=`<div class="sp"><span>${t('sizes')}</span><b>${p.sizes.map(x=>esc(x.label)).join(', ')||'—'}</b><span>${t('heights')}</span><b>${p.heights.map(x=>esc(x.label)).join(', ')||'—'}</b></div>`}
+ const fm=[...new Set(p.files.map(f=>f.format))];
+ return head+gal+`<div class="pd"><h2 class="h2">${esc(nm(p))}</h2><div class="ar">${t('sku')}: ${esc(p.sku)} · ${esc(nm(byId(b.categories,p.category_id)))} · ${esc(nm(byId(b.audiences,p.audience_id)))}</div><div class="pr" style="font-size:22px;margin-top:6px">${money(p.price_stars)}</div>${p.tags.length?`<div style="margin-top:6px">${p.tags.map(x=>`<span class="bd" style="margin:0 6px 0 0">${esc(nm(byId(b.tags,x.id)))}</span>`).join('')}</div>`:''}</div>
+ <p class="pd tx">${esc(nm(p,'desc')).replace(/\n/g,'<br>')}</p>${pick}${msg}
+ ${p.pieces_count||attrs?`<div class="sp">${p.pieces_count?`<span>#</span><b>${p.pieces_count}</b>`:''}${attrs}</div>`:''}
+ <h3 class="h3">${t('includes')}</h3>${fm.map(c=>{const f=b.formats.find(x=>x.code==c)||{label:c};return `<div class="fr" style="margin:0 14px"><span>📄 <b>${esc(f.label)}</b></span></div>`}).join('')||`<p class="pd ar">—</p>`}
+ <p class="pd ar">${t('digital')}</p>
+ <div class="cta">${own&&!vs.has?`<button class="bt s" style="flex:1" data-a="tab" data-v="buys">✓ ${t('own')} · ${t('openBuys')}</button>`:`<button class="bt s" style="flex:1" data-a="${inCart?'tab':'add'}" data-v="${inCart?'cart':p.id}" ${canBuy||inCart?'':'disabled'}>${inCart?t('inCart'):t('add')}</button><button class="bt go" style="flex:1" data-a="now" data-v="${p.id}" ${canBuy?'':'disabled'}>${t('now')}</button>`}</div>`}
+// ===== корзина, покупки, страницы =====
+const cartLines=()=>S.cart.map(c=>({c,p:S.cartItems.find(i=>i.id===c.id)})).filter(x=>x.p);
+const cartTotal=()=>cartLines().reduce((s,x)=>s+x.p.price_stars,0);
+const vCart=()=>hd({back:'cartback',title:t('cart')})+(S.cart.length&&cartLines().length?cartLines().map(({c,p})=>`<div class="li"><div class="im th">${imgT(p.image)}</div><div><div class="ar">${esc(p.sku)}${c.vid?' · '+esc(vlabel(c.size,c.height)):''}</div><div>${esc(nm(p))}</div><b class="pr">${money(p.price_stars)}</b></div><button class="ib" data-a="rm" data-v="${ck(c)}" aria-label="${t('rm')}">✕</button></div>`).join('')+`<div class="rt"><b>${t('tot')}</b><b class="pr">${money(cartTotal())}</b></div><div class="rt"><button class="bt s" data-a="clr">${t('clr')}</button><button class="bt go" style="flex:1" data-a="co">${t('co')}</button></div>`:`<div class="em"><p>${t('emp')}</p><button class="bt" data-a="tab" data-v="cat">${t('all')}</button></div>`);
+const dstr=ts=>new Date(ts*1000).toISOString().slice(0,10);
+const isVideo=f=>/\.(mp4|webm|mov|m4v)$/i.test(f.filename);
+const vBuys=()=>hd({title:t('buys')})+(!(TG&&TG.initData)?`<div class="em">${t('openTg')}</div>`:!S.buys?`<div class="gd"><div class="sk"></div></div>`:S.buys.err?`<div class="er">${esc(errMsg(S.buys.err))}</div>`:S.buys.items.length?S.buys.items.map(it=>`<div class="bx"><div class="rt" style="padding:0 0 8px"><b>${t('ord')} ${esc(it.order_number)}</b><span class="ar">${dstr(it.paid_at||it.created_at)} · ${money(it.price_stars)}</span></div><div>${esc(nm(it))} <span class="ar">${esc(it.sku)}${it.size_label?' · '+esc([it.size_label,it.height_label].filter(Boolean).join(' / ')):''}</span></div>${it.files.map(f=>`<div class="fr"><span>📄 ${esc((B().formats.find(x=>x.code==f.format)||{label:f.format}).label)} <span class="ar">v${f.version} · ${fsize(f.size)}</span></span>${isVideo(f)?`<button class="bt s" style="padding:8px 12px" data-a="watch" data-v="${f.id}">${t('watch')}</button>`:''}<button class="bt s" style="padding:8px 12px" data-a="get" data-v="${f.id}">${t('get')}</button></div>`).join('')||`<div class="ar">${t('unavail')}</div>`}</div>`).join(''):`<div class="em">${t('nb')}</div>`);
+function blocksHtml(page){return page.blocks.map(b=>{const d=b.data||{},L=Object.assign({},d.en||{},d.ru||{},d[LANG]||{});
+ switch(b.type){case'heading':return `<h3 class="h3">${esc(L.t||'')}</h3>`;case'text':return `<p class="pd tx">${esc(L.t||'').replace(/\n/g,'<br>')}</p>`;
+ case'faq':return `<details><summary>${esc(L.q||'')}</summary><p>${esc(L.a||'').replace(/\n/g,'<br>')}</p></details>`;
+ case'button':return `<div class="btn-row"><button class="bt" data-a="ext" data-u="${esc(d.url||'')}">${esc(L.label||'')}</button></div>`;
+ case'image':return d.url?`<div class="im" style="aspect-ratio:auto;margin:8px 14px"><img src="${esc(U(d.url))}" alt="${esc(L.t||'')}"></div>${L.t?`<p class="pd ar">${esc(L.t)}</p>`:''}`:'';}return ''}).join('')}
+const vPage=()=>{const p=S.page;const custom=S.tab.startsWith('page:');
+ if(S.perr2)return hd({title:'',back:custom?'cartback':''})+`<div class="er">${esc(errMsg(S.perr2))}<br><button class="bt s" data-a="retryp" style="margin-top:8px">${t('retry')}</button></div>`;
+ if(!p)return hd({title:t('loading')})+`<div class="gd"><div class="sk"></div></div>`;
+ const docs=S.tab==='info'?B().pages:[];
+ return hd({title:nm(p,'title'),back:custom?'cartback':''})+blocksHtml(p)+(docs.length?`<h3 class="h3">${t('docs')}</h3>${docs.map(d=>`<div class="fr" style="margin:0 14px"><span><a href="#" data-a="tab" data-v="page:${esc(d.slug)}" style="color:#000">${esc(nm(d,'title'))}</a></span></div>`).join('')}`:'')};
+const navLabel=m=>nm(m,'label');
+const nav=()=>{const items=(B().menu&&B().menu.length?B().menu:[{target:'cat',icon:'catalog',label_ru:'Каталог',label_en:'Catalog',label_kk:'Каталог'},{target:'cart',icon:'cart',label_ru:'Корзина',label_en:'Cart',label_kk:'Себет'},{target:'buys',icon:'bag',label_ru:'Покупки',label_en:'Purchases',label_kk:'Сатып алу'},{target:'info',icon:'info',label_ru:'Инфо',label_en:'Info',label_kk:'Ақпарат'}]);
+ return `<nav class="nv"><div>${items.map(m=>`<button class="${S.tab==m.target?'on':''}" data-a="tab" data-v="${esc(m.target)}" aria-label="${esc(navLabel(m))}"><span>${svg(m.icon)}</span>${m.target=='cart'&&S.cart.length?`<em>${S.cart.length}</em>`:''}${esc(navLabel(m))}</button>`).join('')}</div></nav>`};
+const sheet=()=>{if(!S.sheet)return'';const L=cartLines();
+ return `<div class="ov"><div class="bk" data-a="close"></div><div class="sh">`+(S.sheet==3?`<h3>✓ ${esc(S.msg||t('payOk'))}</h3><button class="bt go" data-a="tab" data-v="buys">${t('buys')}</button>`:`<h3>${t('co')}</h3>${L.map(({c,p})=>`<div class="fr"><span>${esc(nm(p))}${c.vid?' <span class="ar">'+esc(vlabel(c.size,c.height))+'</span>':''}</span><b class="pr">${money(p.price_stars)}</b></div>`).join('')}<div class="rt" style="padding:10px 0"><b>${t('tot')}</b><b class="pr">${money(cartTotal())}</b></div><button class="bt go" data-a="pay" ${S.sheet==2?'disabled':''}>${S.sheet==2?t('loading'):t('pay')}</button><button class="bt s" data-a="close">✕</button>`)+`</div></div>`};
+const player=()=>S.player?`<div class="pl"><div><video controls playsinline autoplay src="${esc(S.player)}"></video><button class="bt" style="width:100%;margin-top:8px" data-a="closep">${t('close')}</button></div></div>`:'';
+function R(){document.documentElement.lang=LANG;const a=$('#app');
+ if(S.err){a.innerHTML=hd({lang:true})+`<div class="er">${esc(errMsg(S.err))}<br><button class="bt s" data-a="boot" style="margin-top:8px">${t('retry')}</button></div>`;return}
+ if(S.boot&&S.boot.settings.maintenance){a.innerHTML=hd({lang:true})+`<div class="em">${t('errMaint')}</div>`;return}
+ const tab=S.tab;let body;
+ if(S.pid)body=vPrd();else if(tab==='cat')body=hd({lang:true})+vCat()+nav();else if(tab==='cart')body=vCart()+nav();else if(tab==='buys')body=vBuys()+nav();else body=vPage()+nav();
+ a.innerHTML=body+sheet()+player();if(!S.pid&&tab==='cat')renderRes()}
+// ===== действия =====
+async function pay(){if(S.sheet!==1)return;if(!(TG&&TG.initData&&TG.openInvoice)){toast(t('openInTg'));return}
+ S.sheet=2;R();
+ try{const r=await API('/api/cart/checkout',{method:'POST',body:{items:S.cart.map(c=>({product_id:c.id,variant_id:c.vid||undefined,size_id:c.size||undefined,height_id:c.height||undefined}))}});
+  TG.openInvoice(r.invoice_link,async st=>{if(st==='paid')await waitPaid(r.order.number);else{S.sheet=0;toast(st==='cancelled'?t('payCancelled'):st==='failed'?t('payFailed'):'');R()}})}
+ catch(e){S.sheet=0;if(e.code==='items_unavailable'){const d=e.details||{},bad=new Set([...(d.unavailable||[]),...(d.owned||[])]),bv=new Set(d.variants_unavailable||[]);S.cart=S.cart.filter(c=>!bad.has(c.id)&&!bv.has(c.vid));saveCart();await loadBuys();await loadCart()}toast(errMsg(e));R()}}
+async function waitPaid(n){for(let i=0;i<25;i++){try{const o=await API('/api/orders/'+n);if(o.status==='paid'){S.cart=[];saveCart();S.cartItems=[];S.msg=t('payOk');await loadBuys();S.sheet=3;R();return}}catch(e){}await new Promise(r=>setTimeout(r,1200))}
+ S.sheet=0;toast(t('payWait'));R()}
+async function dl(id){try{const r=await API('/api/me/files/'+id+'/link',{method:'POST'});
+ if(TG&&TG.downloadFile&&TG.isVersionAtLeast&&TG.isVersionAtLeast('8.0'))TG.downloadFile({url:r.url,file_name:r.filename});else if(TG&&TG.openLink)TG.openLink(r.url);else location.href=r.url}catch(e){toast(errMsg(e))}}
+async function watch(id){try{const r=await API('/api/me/files/'+id+'/link?inline=1',{method:'POST'});S.player=r.url;R()}catch(e){toast(errMsg(e))}}
+async function openP(id){S.sy=scrollY;S.pid=+id;S.prod=null;S.perr=null;S.img=0;S.sel={size:0,height:0};R();scrollTo(0,0);try{S.prod=await API('/api/products/'+id)}catch(e){S.perr=e}R()}
+const setLang=l=>{LANG=l;LS.set('cfx.lang',l);if(TG&&TG.initData)API('/api/me',{method:'PATCH',body:{lang:l}}).catch(()=>{});R()};
+async function go(tab){if(tab!==S.tab&&tab!=='cart')S.prev=S.tab;else if(tab==='cart'&&S.tab!=='cart')S.prev=S.tab;S.tab=tab;S.pid=null;S.sheet=0;R();scrollTo(0,0);
+ if(tab==='cart')await loadCart();else if(tab==='buys')await loadBuys();else if(tab==='info'||tab.startsWith('page:'))await loadPage(tab==='info'?'info':tab.slice(5));R()}
+async function act(a,el){const d=el.dataset,v=d.v;switch(a){
+case'tab':await go(v);return;
+case'cartback':await go(S.prev&&S.prev!==S.tab?S.prev:'cat');return;
+case'f':S.f[d.k]=String(S.f[d.k])===String(v)?'':v;loadList(true);break;
+case'showF':S.showF=!S.showF;break;
+case'reset':{const q=S.f.q;S.f={q,category:'',audience:'',size:'',height:'',tag:'',format:'',price_min:'',price_max:'',featured:'',sort:'featured'};loadList(true);break}
+case'more':S.list.page++;loadList(false);return;
+case'retry':loadList(true);return;
+case'retryp':await loadPage(S.tab==='info'?'info':S.tab.slice(5));return;
+case'boot':S.err=null;init();return;
+case'open':await openP(v);return;
+case'back':S.pid=null;R();scrollTo(0,S.sy||0);return;
+case'gprev':case'gnext':{const n=S.prod?S.prod.images.length:0;if(n){S.img=(S.img+(a==='gnext'?1:n-1))%n}break}
+case'sel':S.sel[d.k]=S.sel[d.k]==v?0:+v;break;
+case'add':case'now':{const p=S.prod;if(!p||p.id!==+v)break;const vs=variantState(p);let c;
+ if(vs.has){if(vs.state!=='ok'||ownedV(p.id,vs.v.id)){toast(t(vs.state==='ok'?'own':'combo'));break}c={id:p.id,vid:vs.v.id,size:vs.v.size_id,height:vs.v.height_id||0}}
+ else{if(bought(p.id)){toast(t('own'));break}c={id:p.id,vid:null,size:S.sel.size||0,height:S.sel.height||0}}
+ if(!S.cart.some(x=>ck(x)===ck(c)))S.cart.push(c);saveCart();await loadCart();if(a==='add')toast(t('inCart'));else S.sheet=1;break}
+case'rm':S.cart=S.cart.filter(c=>ck(c)!==v);saveCart();break;
+case'clr':S.cart=[];saveCart();S.cartItems=[];break;
+case'co':if(!S.cart.length){toast(t('emp'));break}S.sheet=1;break;
+case'close':S.sheet=0;break;
+case'closep':S.player=null;break;
+case'pay':await pay();return;
+case'get':await dl(v);return;
+case'watch':await watch(v);return;
+case'ext':{const u=d.u||'';if(/^https:\/\/t\.me\//.test(u)&&TG&&TG.openTelegramLink)TG.openTelegramLink(u);else if(TG&&TG.openLink)TG.openLink(u);else window.open(u,'_blank');return}
+case'setlang':setLang(v);return}
+R()}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(b&&!b.disabled){if(b.tagName==='A')e.preventDefault&&e.preventDefault();act(b.dataset.a,b)}});
+let qt;document.addEventListener('input',e=>{if(e.target.id==='q'){S.f.q=e.target.value;clearTimeout(qt);qt=setTimeout(()=>loadList(true),300)}});
+document.addEventListener('change',e=>{const t=e.target;if(t.dataset.p){S.f[t.dataset.p]=t.value;loadList(true)}else if(t.dataset.s){S.f[t.dataset.s]=t.value;loadList(true)}});
+init();
+</script></body></html>
