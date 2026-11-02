@@ -26,9 +26,9 @@ export async function updateSettings(env: Env, b: any) {
 }
 
 export async function bootstrap(env: Env) {
-  const [settings, categories, audiences, size_groups, sizes, height_groups, heights, tags, attributes, attribute_values, formats] = await Promise.all([
+  const [settings, categories, audiences, size_groups, sizes, height_groups, heights, tags, attributes, attribute_values, formats, menu, pages] = await Promise.all([
     getSettings(env),
-    q(env, 'SELECT id,parent_id,slug,name_ru,name_kk,name_en,image_key,sort FROM categories WHERE hidden=0 AND archived=0 ORDER BY sort,id'),
+    q(env, 'SELECT id,parent_id,audience_id,slug,name_ru,name_kk,name_en,image_key,sort FROM categories WHERE hidden=0 AND archived=0 ORDER BY sort,id'),
     q(env, 'SELECT id,slug,name_ru,name_kk,name_en,sort FROM audiences WHERE hidden=0 ORDER BY sort,id'),
     q(env, 'SELECT id,slug,name_ru,name_kk,name_en,sort FROM size_groups ORDER BY sort,id'),
     q(env, 'SELECT id,group_id,label,sort FROM sizes WHERE hidden=0 ORDER BY sort,id'),
@@ -38,11 +38,13 @@ export async function bootstrap(env: Env) {
     q(env, 'SELECT id,slug,kind,filterable,name_ru,name_kk,name_en,sort FROM attributes ORDER BY sort,id'),
     q(env, 'SELECT id,attribute_id,value_ru,value_kk,value_en,sort FROM attribute_values ORDER BY sort,id'),
     q(env, 'SELECT code,label,ext FROM file_formats WHERE active=1 ORDER BY sort,code'),
+    q(env, 'SELECT id,target,icon,label_ru,label_kk,label_en FROM menu_items WHERE visible=1 ORDER BY sort,id'),
+    q(env, "SELECT slug,kind,title_ru,title_kk,title_en FROM pages WHERE visible=1 AND kind!='info' ORDER BY sort,id"),
   ]);
   for (const c of categories) { c.image = imgUrl(c.image_key); delete c.image_key; }
   settings.logo = imgUrl(settings.logo_key);
   delete settings.logo_key;
-  return { settings, categories, audiences, size_groups, sizes, height_groups, heights, tags, attributes, attribute_values, formats };
+  return { settings, categories, audiences, size_groups, sizes, height_groups, heights, tags, attributes, attribute_values, formats, menu, pages };
 }
 
 // Какие значения фильтров реально есть среди опубликованных товаров (пустые варианты не показываем).
@@ -51,8 +53,8 @@ export async function facets(env: Env) {
   const [categories, audiences, sizes, heights, tags, formats, price, attributes] = await Promise.all([
     q(env, `SELECT p.category_id id,COUNT(*) n FROM products p WHERE ${P} AND p.category_id IS NOT NULL GROUP BY p.category_id`),
     q(env, `SELECT p.audience_id id,COUNT(*) n FROM products p WHERE ${P} AND p.audience_id IS NOT NULL GROUP BY p.audience_id`),
-    q(env, `SELECT x.size_id id,COUNT(*) n FROM product_sizes x JOIN products p ON p.id=x.product_id WHERE ${P} GROUP BY x.size_id`),
-    q(env, `SELECT x.height_id id,COUNT(*) n FROM product_heights x JOIN products p ON p.id=x.product_id WHERE ${P} GROUP BY x.height_id`),
+    q(env, `SELECT x.size_id id,COUNT(*) n,SUM(CASE WHEN EXISTS(SELECT 1 FROM product_variants v WHERE v.product_id=x.product_id AND v.active=1) THEN (CASE WHEN EXISTS(SELECT 1 FROM product_variants v WHERE v.product_id=x.product_id AND v.size_id=x.size_id AND v.active=1 AND v.available=1) THEN 1 ELSE 0 END) ELSE 1 END) a FROM product_sizes x JOIN products p ON p.id=x.product_id WHERE ${P} GROUP BY x.size_id`),
+    q(env, `SELECT x.height_id id,COUNT(*) n,SUM(CASE WHEN EXISTS(SELECT 1 FROM product_variants v WHERE v.product_id=x.product_id AND v.active=1) THEN (CASE WHEN EXISTS(SELECT 1 FROM product_variants v WHERE v.product_id=x.product_id AND v.height_id=x.height_id AND v.active=1 AND v.available=1) THEN 1 ELSE 0 END) ELSE 1 END) a FROM product_heights x JOIN products p ON p.id=x.product_id WHERE ${P} GROUP BY x.height_id`),
     q(env, `SELECT x.tag_id id,COUNT(*) n FROM product_tags x JOIN products p ON p.id=x.product_id WHERE ${P} GROUP BY x.tag_id`),
     q(env, `SELECT f.format code,COUNT(DISTINCT f.product_id) n FROM product_files f JOIN products p ON p.id=f.product_id WHERE ${P} AND f.active=1 GROUP BY f.format`),
     q(env, `SELECT MIN(price_stars) min,MAX(price_stars) max FROM products p WHERE ${P}`),
@@ -98,6 +100,7 @@ export async function listProducts(env: Env, sp: URLSearchParams, admin = false)
   const page = Math.max(1, int(sp.get('page'), 1));
   const total = (await env.DB.prepare(`SELECT COUNT(*) n FROM products p ${where}`).bind(...a).first())!.n;
   const rows = await q(env, `SELECT p.id,p.sku,p.slug,p.name_ru,p.name_kk,p.name_en,p.price_stars,p.featured,p.status,p.category_id,p.audience_id,p.updated_at,
+    (SELECT COUNT(*) FROM product_variants v WHERE v.product_id=p.id AND v.active=1) vcount,(SELECT COUNT(*) FROM product_variants v WHERE v.product_id=p.id AND v.active=1 AND v.available=1) vavail,
     (SELECT i.storage_key FROM product_images i WHERE i.product_id=p.id ORDER BY (i.kind='main') DESC,i.sort,i.id LIMIT 1) image_key
     FROM products p ${where} ORDER BY ${order} LIMIT ? OFFSET ?`, ...a, limit, (page - 1) * limit);
   if (rows.length) {
@@ -106,7 +109,7 @@ export async function listProducts(env: Env, sp: URLSearchParams, admin = false)
       q(env, `SELECT x.product_id pid,s.id,s.label FROM product_sizes x JOIN sizes s ON s.id=x.size_id WHERE x.product_id IN (${ph}) ORDER BY s.sort,s.id`, ...pid),
       q(env, `SELECT DISTINCT product_id pid,format FROM product_files WHERE active=1 AND product_id IN (${ph})`, ...pid),
     ]);
-    for (const r of rows) { r.image = imgUrl(r.image_key); delete r.image_key; r.sizes = sz.filter((x) => x.pid === r.id).map((x) => ({ id: x.id, label: x.label })); r.formats = fm.filter((x) => x.pid === r.id).map((x) => x.format); }
+    for (const r of rows) { r.image = imgUrl(r.image_key); delete r.image_key; r.has_variants = r.vcount > 0; r.in_stock = r.vcount === 0 || r.vavail > 0; delete r.vcount; delete r.vavail; r.sizes = sz.filter((x) => x.pid === r.id).map((x) => ({ id: x.id, label: x.label })); r.formats = fm.filter((x) => x.pid === r.id).map((x) => x.format); }
   }
   return { items: rows, total, page, limit };
 }
@@ -116,17 +119,18 @@ export async function productDetail(env: Env, key: string, admin = false) {
   const p = await env.DB.prepare(`SELECT * FROM products WHERE ${col}=?`).bind(key).first();
   if (!p || (!admin && p.status !== 'published')) return null;
   const id = p.id;
-  const [images, files, sizes, heights, tags, attributes] = await Promise.all([
+  const [images, files, sizes, heights, tags, attributes, variants] = await Promise.all([
     q(env, 'SELECT id,storage_key,kind,sort FROM product_images WHERE product_id=? ORDER BY (kind=\'main\') DESC,sort,id', id),
-    admin ? q(env, 'SELECT id,format,filename,size,checksum,version,active,created_at FROM product_files WHERE product_id=? ORDER BY format,version DESC', id)
-      : q(env, 'SELECT id,format,filename,size,version FROM product_files WHERE product_id=? AND active=1 ORDER BY format', id),
+    admin ? q(env, 'SELECT id,variant_id,format,filename,size,checksum,version,active,created_at FROM product_files WHERE product_id=? ORDER BY format,variant_id,version DESC', id)
+      : q(env, 'SELECT id,variant_id,format,filename,size,version FROM product_files WHERE product_id=? AND active=1 ORDER BY format', id),
     q(env, 'SELECT s.id,s.label,s.group_id FROM product_sizes x JOIN sizes s ON s.id=x.size_id WHERE x.product_id=? ORDER BY s.sort,s.id', id),
     q(env, 'SELECT h.id,h.label,h.cm,h.group_id FROM product_heights x JOIN heights h ON h.id=x.height_id WHERE x.product_id=? ORDER BY h.sort,h.id', id),
     q(env, 'SELECT t.id,t.slug FROM product_tags x JOIN tags t ON t.id=x.tag_id WHERE x.product_id=? ORDER BY t.sort', id),
     q(env, 'SELECT attribute_id,value_id,text_value FROM product_attributes WHERE product_id=? ORDER BY id', id),
+    q(env, `SELECT id,size_id,height_id,available,active,sort FROM product_variants WHERE product_id=? ${admin ? '' : 'AND active=1'} ORDER BY sort,id`, id),
   ]);
   for (const i of images) { i.url = imgUrl(i.storage_key); delete i.storage_key; }
-  return { ...p, images, files, sizes, heights, tags, attributes };
+  return { ...p, images, files, sizes, heights, tags, attributes, variants };
 }
 
 // ---------- запись товара (админ) ----------
@@ -186,6 +190,7 @@ export async function saveProduct(env: Env, body: any, id?: number) {
     if (cols.length) st.push(env.DB.prepare(`UPDATE products SET ${cols.map((k) => k + '=?').join(',')},updated_at=? WHERE id=?`).bind(...cols.map((k) => (o[k] === '' && k === 'currency' ? null : o[k])), t, id));
     else st.push(env.DB.prepare('UPDATE products SET updated_at=? WHERE id=?').bind(t, id));
   }
+  if (id && (o.size_ids !== undefined || o.height_ids !== undefined) && (await env.DB.prepare('SELECT 1 x FROM product_variants WHERE product_id=? AND active=1').bind(id).first())) { delete o.size_ids; delete o.height_ids; }
   const rel = (key: string, tbl: string, col: string) => {
     if (o[key] === undefined) return;
     if (id) st.push(env.DB.prepare(`DELETE FROM ${tbl} WHERE product_id=?`).bind(id));
@@ -214,7 +219,11 @@ export async function setStatus(env: Env, id: number, status: string) {
     if (!p.category_id) missing.push('category');
     if (status === 'published') {
       if (!p.images.length) missing.push('image');
-      if (!p.files.some((f: any) => f.active)) missing.push('file');
+      const vs = p.variants.filter((v: any) => v.active && v.available);
+      if (vs.length) {
+        const common = p.files.some((f: any) => f.active && !f.variant_id);
+        if (!common && vs.some((v: any) => !p.files.some((f: any) => f.active && f.variant_id === v.id))) missing.push('variant_files');
+      } else if (!p.files.some((f: any) => f.active)) missing.push('file');
     }
     if (missing.length) throw new HttpError(409, 'not_ready', { missing });
   }
@@ -239,33 +248,47 @@ export async function deleteProduct(env: Env, id: number, hard: boolean) {
 type Dict = { table: string; cols: string[]; ints: string[]; req: string[]; order: string; pk?: string; ts?: boolean };
 const NAMES = ['name_ru', 'name_kk', 'name_en'];
 export const DICTS: Record<string, Dict> = {
-  categories: { table: 'categories', cols: ['parent_id', 'slug', ...NAMES, 'image_key', 'sort', 'hidden', 'archived'], ints: ['parent_id', 'sort', 'hidden', 'archived'], req: ['slug', 'name_ru'], order: 'sort,id', ts: true },
-  audiences: { table: 'audiences', cols: ['slug', ...NAMES, 'sort', 'hidden'], ints: ['sort', 'hidden'], req: ['slug', 'name_ru'], order: 'sort,id' },
-  size_groups: { table: 'size_groups', cols: ['slug', ...NAMES, 'sort'], ints: ['sort'], req: ['slug', 'name_ru'], order: 'sort,id' },
+  categories: { table: 'categories', cols: ['parent_id', 'audience_id', 'slug', ...NAMES, 'image_key', 'sort', 'hidden', 'archived'], ints: ['parent_id', 'audience_id', 'sort', 'hidden', 'archived'], req: ['name_ru'], order: 'sort,id', ts: true },
+  audiences: { table: 'audiences', cols: ['slug', ...NAMES, 'sort', 'hidden'], ints: ['sort', 'hidden'], req: ['name_ru'], order: 'sort,id' },
+  size_groups: { table: 'size_groups', cols: ['slug', ...NAMES, 'sort'], ints: ['sort'], req: ['name_ru'], order: 'sort,id' },
   sizes: { table: 'sizes', cols: ['group_id', 'label', 'sort', 'hidden'], ints: ['group_id', 'sort', 'hidden'], req: ['group_id', 'label'], order: 'group_id,sort,id' },
-  height_groups: { table: 'height_groups', cols: ['slug', ...NAMES, 'sort'], ints: ['sort'], req: ['slug', 'name_ru'], order: 'sort,id' },
+  height_groups: { table: 'height_groups', cols: ['slug', ...NAMES, 'sort'], ints: ['sort'], req: ['name_ru'], order: 'sort,id' },
   heights: { table: 'heights', cols: ['group_id', 'label', 'cm', 'sort', 'hidden'], ints: ['group_id', 'cm', 'sort', 'hidden'], req: ['group_id', 'label'], order: 'group_id,sort,id' },
-  tags: { table: 'tags', cols: ['slug', ...NAMES, 'sort', 'hidden'], ints: ['sort', 'hidden'], req: ['slug', 'name_ru'], order: 'sort,id' },
-  attributes: { table: 'attributes', cols: ['slug', 'kind', 'filterable', ...NAMES, 'sort'], ints: ['filterable', 'sort'], req: ['slug', 'name_ru'], order: 'sort,id' },
+  tags: { table: 'tags', cols: ['slug', ...NAMES, 'sort', 'hidden'], ints: ['sort', 'hidden'], req: ['name_ru'], order: 'sort,id' },
+  attributes: { table: 'attributes', cols: ['slug', 'kind', 'filterable', ...NAMES, 'sort'], ints: ['filterable', 'sort'], req: ['name_ru'], order: 'sort,id' },
   attribute_values: { table: 'attribute_values', cols: ['attribute_id', 'value_ru', 'value_kk', 'value_en', 'sort'], ints: ['attribute_id', 'sort'], req: ['attribute_id', 'value_ru'], order: 'attribute_id,sort,id' },
   file_formats: { table: 'file_formats', pk: 'code', cols: ['code', 'label', 'ext', 'sort', 'active'], ints: ['sort', 'active'], req: ['code', 'label', 'ext'], order: 'sort,code' },
+  menu_items: { table: 'menu_items', cols: ['target', 'icon', 'label_ru', 'label_kk', 'label_en', 'sort', 'visible'], ints: ['sort', 'visible'], req: ['target', 'label_ru'], order: 'sort,id' },
+  pages: { table: 'pages', cols: ['slug', 'kind', 'title_ru', 'title_kk', 'title_en', 'sort', 'visible'], ints: ['sort', 'visible'], req: ['title_ru'], order: 'sort,id', ts: true },
 };
-function cleanDict(d: Dict, b: any, partial: boolean) {
+const ICONS = ['catalog', 'cart', 'bag', 'info', 'home', 'heart', 'star', 'user', 'chat', 'book', 'video', 'scissors', 'tag', 'phone', 'mail', 'link', 'gift', 'search'];
+export const ICON_LIST = ICONS;
+function cleanDict(d: Dict, b: any, partial: boolean, table: string) {
   const o: any = {};
   for (const k of d.cols) {
     if (b?.[k] === undefined) { if (!partial && d.req.includes(k)) throw new HttpError(400, 'validation', { field: k }); continue; }
     if (d.ints.includes(k)) { const v = b[k]; o[k] = v === null || v === '' ? null : Number(v); if (o[k] !== null && !Number.isInteger(o[k])) throw new HttpError(400, 'validation', { field: k }); if (o[k] === null && d.req.includes(k)) throw new HttpError(400, 'validation', { field: k }); }
     else { const v = String(b[k] ?? '').trim(); if (v.length > 200 || (d.req.includes(k) && !v)) throw new HttpError(400, 'validation', { field: k }); o[k] = v; }
   }
-  if (o.slug !== undefined && !/^[a-z0-9-]+$/.test(o.slug)) throw new HttpError(400, 'validation', { field: 'slug' });
+  if (o.slug !== undefined && o.slug !== '' && !/^[a-z0-9-]+$/.test(o.slug)) throw new HttpError(400, 'validation', { field: 'slug' });
+  if (o.slug === '') delete o.slug;
   if (o.code !== undefined && !/^[a-z0-9_]+$/.test(o.code)) throw new HttpError(400, 'validation', { field: 'code' });
   if (o.ext !== undefined && !/^[a-z0-9]{1,8}$/.test(o.ext)) throw new HttpError(400, 'validation', { field: 'ext' });
-  if (o.kind !== undefined && !['text', 'choice'].includes(o.kind)) throw new HttpError(400, 'validation', { field: 'kind' });
+  if (o.kind !== undefined && !(table === 'pages' ? ['info', 'legal', 'custom'] : ['text', 'choice']).includes(o.kind)) throw new HttpError(400, 'validation', { field: 'kind' });
+  if (o.target !== undefined && !/^(cat|cart|buys|info|page:[a-z0-9-]+)$/.test(o.target)) throw new HttpError(400, 'validation', { field: 'target' });
+  if (o.icon !== undefined && !ICONS.includes(o.icon)) throw new HttpError(400, 'validation', { field: 'icon' });
   return o;
+}
+const hasSlug = (d: Dict) => d.cols.includes('slug');
+async function uniqueSlug(env: Env, table: string, base: string) {
+  let s = base || 'item', n = 2;
+  while (await env.DB.prepare(`SELECT 1 x FROM ${table} WHERE slug=?`).bind(s).first()) s = (base || 'item') + '-' + n++;
+  return s;
 }
 export const dictList = (env: Env, name: string) => q(env, `SELECT * FROM ${DICTS[name].table} ORDER BY ${DICTS[name].order}`);
 export async function dictSave(env: Env, name: string, body: any, id?: string) {
-  const d = DICTS[name]; const pk = d.pk || 'id'; const o = cleanDict(d, body, !!id);
+  const d = DICTS[name]; const pk = d.pk || 'id'; const o = cleanDict(d, body, !!id, name);
+  if (!id && hasSlug(d) && !o.slug) o.slug = await uniqueSlug(env, d.table, slugify(String(body?.name_en || body?.title_en || '')));
   const cols = Object.keys(o);
   try {
     if (id) {
@@ -281,6 +304,131 @@ export async function dictSave(env: Env, name: string, body: any, id?: string) {
 }
 export async function dictDelete(env: Env, name: string, id: string) {
   const d = DICTS[name];
+  if (name === 'pages') {
+    const pg = await env.DB.prepare('SELECT slug,kind FROM pages WHERE id=?').bind(id).first();
+    if (!pg) throw new HttpError(404, 'not_found');
+    if (pg.kind === 'info') throw new HttpError(409, 'protected');
+    await env.DB.batch([env.DB.prepare('DELETE FROM menu_items WHERE target=?').bind('page:' + pg.slug), env.DB.prepare('DELETE FROM pages WHERE id=?').bind(id)]);
+    return;
+  }
+  if (name === 'menu_items') {
+    const m = await env.DB.prepare('SELECT target FROM menu_items WHERE id=?').bind(id).first();
+    if (m && ['cat', 'cart', 'buys', 'info'].includes(m.target)) throw new HttpError(409, 'protected');
+  }
   try { const r: any = await env.DB.prepare(`DELETE FROM ${d.table} WHERE ${d.pk || 'id'}=?`).bind(id).run(); if (r.meta?.changes === 0) throw new HttpError(404, 'not_found'); }
   catch (e: any) { if (/FOREIGN KEY/i.test(String(e?.message))) throw new HttpError(409, 'in_use'); throw e; }
+}
+
+// ---------- перетаскивание: «рабочая область» и «неиспользуемые» ----------
+const RO: Record<string, { pk?: string; flag?: string; onWork?: number; onLib?: number }> = {
+  categories: { flag: 'hidden', onWork: 0, onLib: 1 }, audiences: { flag: 'hidden', onWork: 0, onLib: 1 }, sizes: { flag: 'hidden', onWork: 0, onLib: 1 },
+  heights: { flag: 'hidden', onWork: 0, onLib: 1 }, tags: { flag: 'hidden', onWork: 0, onLib: 1 },
+  size_groups: {}, height_groups: {}, attributes: {}, attribute_values: {},
+  file_formats: { pk: 'code', flag: 'active', onWork: 1, onLib: 0 }, menu_items: { flag: 'visible', onWork: 1, onLib: 0 },
+  pages: { flag: 'visible', onWork: 1, onLib: 0 }, page_blocks: { flag: 'visible', onWork: 1, onLib: 0 },
+};
+export async function reorder(env: Env, table: string, work: any, library: any) {
+  const r = RO[table]; if (!r) throw new HttpError(404, 'not_found');
+  const arr = (v: any) => { if (v === undefined) return []; if (!Array.isArray(v) || v.length > 1000) throw new HttpError(400, 'validation'); return v.map((x: any) => (r.pk === 'code' ? (/^[a-z0-9_]+$/.test(String(x)) ? String(x) : (() => { throw new HttpError(400, 'validation'); })()) : int(x, 0) > 0 ? int(x, 0) : (() => { throw new HttpError(400, 'validation'); })())); };
+  const w = arr(work), l = arr(library);
+  if (!r.flag && l.length) throw new HttpError(400, 'validation', { field: 'library' });
+  if (new Set([...w, ...l]).size !== w.length + l.length) throw new HttpError(400, 'validation');
+  const pk = r.pk || 'id'; const st: any[] = [];
+  const upd = (id: any, sort: number, flagVal?: number) => st.push(env.DB.prepare(`UPDATE ${table} SET sort=?${r.flag ? ',' + r.flag + '=?' : ''} WHERE ${pk}=?`).bind(...(r.flag ? [sort, flagVal, id] : [sort, id])));
+  w.forEach((id: any, i: number) => upd(id, i + 1, r.onWork));
+  l.forEach((id: any, i: number) => upd(id, w.length + i + 1, r.onLib));
+  if (st.length) await env.DB.batch(st);
+  return { ok: true };
+}
+
+// ---------- варианты товара (размер × рост) ----------
+async function syncVariantFilters(env: Env, pid: number) {
+  await env.DB.batch([
+    env.DB.prepare('DELETE FROM product_sizes WHERE product_id=?').bind(pid),
+    env.DB.prepare('DELETE FROM product_heights WHERE product_id=?').bind(pid),
+    env.DB.prepare('INSERT INTO product_sizes(product_id,size_id) SELECT DISTINCT product_id,size_id FROM product_variants WHERE product_id=? AND active=1').bind(pid),
+    env.DB.prepare('INSERT INTO product_heights(product_id,height_id) SELECT DISTINCT product_id,height_id FROM product_variants WHERE product_id=? AND active=1 AND height_id IS NOT NULL').bind(pid),
+    env.DB.prepare('UPDATE products SET updated_at=? WHERE id=?').bind(now(), pid),
+  ]);
+}
+const idArr = (v: any, field: string) => { if (v === undefined || v === null) return [] as number[]; if (!Array.isArray(v) || v.length > 200) throw new HttpError(400, 'validation', { field }); const r = [...new Set(v.map((x: any) => int(x, 0)))] as number[]; if (r.some((x) => x <= 0)) throw new HttpError(400, 'validation', { field }); return r; };
+export const variantList = (env: Env, pid: number) => q(env, 'SELECT id,size_id,height_id,available,active,sort FROM product_variants WHERE product_id=? ORDER BY sort,id', pid);
+export async function createVariants(env: Env, pid: number, body: any) {
+  const sizes = idArr(body?.size_ids, 'size_ids'), heights = idArr(body?.height_ids, 'height_ids');
+  if (!sizes.length) throw new HttpError(400, 'validation', { field: 'size_ids' });
+  if (!(await env.DB.prepare('SELECT 1 x FROM products WHERE id=?').bind(pid).first())) throw new HttpError(404, 'not_found');
+  let sort = ((await env.DB.prepare('SELECT COALESCE(MAX(sort),0) n FROM product_variants WHERE product_id=?').bind(pid).first())!.n as number) + 1;
+  const st: any[] = [];
+  for (const s of sizes) for (const h of heights.length ? heights : [null]) st.push(env.DB.prepare('INSERT INTO product_variants(product_id,size_id,height_id,height_key,sort,created_at) VALUES(?,?,?,?,?,?) ON CONFLICT(product_id,size_id,height_key) DO UPDATE SET active=1').bind(pid, s, h, h ?? 0, sort++, now()));
+  try { await env.DB.batch(st); } catch (e) { dbErr(e); }
+  await syncVariantFilters(env, pid);
+  return variantList(env, pid);
+}
+export async function updateVariant(env: Env, id: number, b: any) {
+  const v = await env.DB.prepare('SELECT product_id FROM product_variants WHERE id=?').bind(id).first();
+  if (!v) throw new HttpError(404, 'not_found');
+  const sets: string[] = [], a: any[] = [];
+  for (const k of ['available', 'active']) if (b?.[k] !== undefined) { sets.push(k + '=?'); a.push(b[k] ? 1 : 0); }
+  if (!sets.length) throw new HttpError(400, 'validation');
+  await env.DB.prepare(`UPDATE product_variants SET ${sets.join(',')} WHERE id=?`).bind(...a, id).run();
+  await syncVariantFilters(env, v.product_id);
+  return env.DB.prepare('SELECT id,product_id,size_id,height_id,available,active,sort FROM product_variants WHERE id=?').bind(id).first();
+}
+export async function removeVariant(env: Env, id: number) {
+  const v = await env.DB.prepare('SELECT product_id FROM product_variants WHERE id=?').bind(id).first();
+  if (!v) throw new HttpError(404, 'not_found');
+  const used = await env.DB.prepare('SELECT 1 x FROM purchases WHERE variant_id=? UNION SELECT 1 FROM order_items WHERE variant_id=? LIMIT 1').bind(id, id).first();
+  if (used) { await env.DB.prepare('UPDATE product_variants SET active=0 WHERE id=?').bind(id).run(); await syncVariantFilters(env, v.product_id); return { archived: true }; }
+  const keys = (await q(env, 'SELECT storage_key k FROM product_files WHERE variant_id=?', id)).map((x) => x.k);
+  await env.DB.prepare('DELETE FROM product_variants WHERE id=?').bind(id).run();
+  if (keys.length) await env.FILES.delete(keys);
+  await syncVariantFilters(env, v.product_id);
+  return { deleted: true };
+}
+
+// ---------- страницы и блоки ----------
+const BLOCK_FIELDS: Record<string, string[]> = { heading: ['t'], text: ['t'], faq: ['q', 'a'], button: ['label'], image: ['t'] };
+function cleanBlockData(type: string, d: any) {
+  if (!d || typeof d !== 'object' || Array.isArray(d)) throw new HttpError(400, 'validation', { field: 'data' });
+  const out: any = {};
+  for (const lang of ['ru', 'kk', 'en']) {
+    const src = d[lang]; if (src === undefined) continue;
+    if (!src || typeof src !== 'object') throw new HttpError(400, 'validation', { field: 'data.' + lang });
+    out[lang] = {};
+    for (const f of BLOCK_FIELDS[type]) if (src[f] !== undefined) { if (typeof src[f] !== 'string' || src[f].length > 6000) throw new HttpError(400, 'validation', { field: `data.${lang}.${f}` }); out[lang][f] = src[f]; }
+  }
+  if (type === 'button') { if (typeof d.url !== 'string' || !/^(https?:\/\/|tg:\/\/)[^\s]{1,480}$/.test(d.url)) throw new HttpError(400, 'validation', { field: 'data.url' }); out.url = d.url; }
+  if (type === 'image') { if (d.key !== undefined && d.key !== '') { if (typeof d.key !== 'string' || !/^branding\/[A-Za-z0-9._\/-]+$/.test(d.key) || d.key.includes('..')) throw new HttpError(400, 'validation', { field: 'data.key' }); out.key = d.key; } }
+  return out;
+}
+const parseBlock = (r: any) => { let data = {}; try { data = JSON.parse(r.data); } catch { /* пусто */ } return { id: r.id, type: r.type, sort: r.sort, visible: r.visible, data }; };
+export async function getPage(env: Env, slug: string, admin = false) {
+  const pg = await env.DB.prepare(`SELECT id,slug,kind,title_ru,title_kk,title_en,sort,visible FROM pages WHERE slug=? ${admin ? '' : 'AND visible=1'}`).bind(slug).first();
+  if (!pg) return null;
+  const rows = await q(env, `SELECT id,type,data,sort,visible FROM page_blocks WHERE page_id=? ${admin ? '' : 'AND visible=1'} ORDER BY sort,id`, pg.id);
+  return { ...pg, blocks: rows.map((r) => { const b: any = parseBlock(r); if (b.data.key) b.data.url = imgUrl(b.data.key); return b; }) };
+}
+export async function saveBlock(env: Env, pageId: number, body: any, blockId?: number) {
+  const t = now();
+  if (!blockId) {
+    const type = String(body?.type || '');
+    if (!BLOCK_FIELDS[type]) throw new HttpError(400, 'validation', { field: 'type' });
+    if (!(await env.DB.prepare('SELECT 1 x FROM pages WHERE id=?').bind(pageId).first())) throw new HttpError(404, 'not_found');
+    const data = cleanBlockData(type, body?.data ?? {});
+    const sort = ((await env.DB.prepare('SELECT COALESCE(MAX(sort),0)+1 n FROM page_blocks WHERE page_id=?').bind(pageId).first())!.n) as number;
+    const r: any = await env.DB.prepare('INSERT INTO page_blocks(page_id,type,data,sort,visible,created_at,updated_at) VALUES(?,?,?,?,?,?,?)').bind(pageId, type, JSON.stringify(data), sort, body?.visible === false || body?.visible === 0 ? 0 : 1, t, t).run();
+    return parseBlock(await env.DB.prepare('SELECT id,type,data,sort,visible FROM page_blocks WHERE id=?').bind(r.meta.last_row_id).first());
+  }
+  const cur = await env.DB.prepare('SELECT type FROM page_blocks WHERE id=?').bind(blockId).first();
+  if (!cur) throw new HttpError(404, 'not_found');
+  const sets: string[] = [], a: any[] = [];
+  if (body?.data !== undefined) { sets.push('data=?'); a.push(JSON.stringify(cleanBlockData(cur.type, body.data))); }
+  if (body?.visible !== undefined) { sets.push('visible=?'); a.push(body.visible ? 1 : 0); }
+  if (!sets.length) throw new HttpError(400, 'validation');
+  await env.DB.prepare(`UPDATE page_blocks SET ${sets.join(',')},updated_at=? WHERE id=?`).bind(...a, t, blockId).run();
+  return parseBlock(await env.DB.prepare('SELECT id,type,data,sort,visible FROM page_blocks WHERE id=?').bind(blockId).first());
+}
+export async function deleteBlock(env: Env, id: number) {
+  const r: any = await env.DB.prepare('DELETE FROM page_blocks WHERE id=?').bind(id).run();
+  if (r.meta?.changes === 0) throw new HttpError(404, 'not_found');
 }

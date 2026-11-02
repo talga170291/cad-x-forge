@@ -28,6 +28,7 @@ add('GET', '/api/facets', async (c) => json(await cat.facets(c.env)));
 add('GET', '/api/products', async (c) => json(await cat.listProducts(c.env, c.url.searchParams)));
 add('GET', '/api/products/:id', async (c) => { const p = await cat.productDetail(c.env, c.params[0]); if (!p) throw new HttpError(404, 'not_found'); return json(p); });
 add('GET', '/api/img/*', up.serveImage);
+add('GET', '/api/pages/:slug', async (c) => { const p = await cat.getPage(c.env, c.params[0]); if (!p) throw new HttpError(404, 'not_found'); return json(p); });
 // ----- покупатель -----
 add('GET', '/api/me', async (c) => {
   const u = await authenticate(c, true);
@@ -80,6 +81,19 @@ add('POST', '/api/admin/upload/file', A(async (c) => { const r = await up.upload
 add('DELETE', '/api/admin/images/:id', A(async (c) => { const r = await up.deleteImage(c, int(c.params[0], 0)); await adm.audit(c.env, c.user!.id, 'delete_image', 'image', c.params[0]); return r; }));
 add('POST', '/api/admin/images/:id/main', A(async (c) => up.setMainImage(c, int(c.params[0], 0))));
 add('DELETE', '/api/admin/files/:id', A(async (c) => { const r = await up.deactivateFile(c, int(c.params[0], 0)); await adm.audit(c.env, c.user!.id, 'delete_file', 'file', c.params[0]); return r; }));
+add('POST', '/api/admin/products/:id/variants', A(async (c) => { const id = int(c.params[0], 0); const r = await cat.createVariants(c.env, id, await body(c)); await adm.audit(c.env, c.user!.id, 'variants_add', 'product', id, { count: r.length }); return json({ variants: r }, 201); }));
+add('PUT', '/api/admin/variants/:id', A(async (c) => { const r = await cat.updateVariant(c.env, int(c.params[0], 0), await body(c)); await adm.audit(c.env, c.user!.id, 'variant_update', 'variant', c.params[0]); return json(r); }));
+add('DELETE', '/api/admin/variants/:id', A(async (c) => { const r = await cat.removeVariant(c.env, int(c.params[0], 0)); await adm.audit(c.env, c.user!.id, 'variant_delete', 'variant', c.params[0], r); return json(r); }));
+add('POST', '/api/admin/reorder', A(async (c) => { const b: any = await body(c); const r = await cat.reorder(c.env, String(b.table || ''), b.work, b.library); await adm.audit(c.env, c.user!.id, 'reorder', String(b.table), '-'); return json(r); }));
+add('GET', '/api/admin/pages/:slug', A(async (c) => { const p = await cat.getPage(c.env, c.params[0], true); if (!p) throw new HttpError(404, 'not_found'); return json(p); }));
+add('POST', '/api/admin/pages/:id/blocks', A(async (c) => { const r = await cat.saveBlock(c.env, int(c.params[0], 0), await body(c)); await adm.audit(c.env, c.user!.id, 'block_create', 'page', c.params[0]); return json(r, 201); }));
+add('PUT', '/api/admin/blocks/:id', A(async (c) => { const r = await cat.saveBlock(c.env, 0, await body(c), int(c.params[0], 0)); await adm.audit(c.env, c.user!.id, 'block_update', 'block', c.params[0]); return json(r); }));
+add('DELETE', '/api/admin/blocks/:id', A(async (c) => { await cat.deleteBlock(c.env, int(c.params[0], 0)); await adm.audit(c.env, c.user!.id, 'block_delete', 'block', c.params[0]); return json({ deleted: true }); }));
+add('POST', '/api/admin/uploads', A(async (c) => { const r = await up.startUpload(c); return r; }));
+add('GET', '/api/admin/uploads/:id', A(async (c) => up.uploadStatus(c, c.params[0])));
+add('PUT', '/api/admin/uploads/:id/parts/:n', A(async (c) => up.putPart(c, c.params[0], int(c.params[1], 0))));
+add('POST', '/api/admin/uploads/:id/complete', A(async (c) => { const r = await up.completeUpload(c, c.params[0]); await adm.audit(c.env, c.user!.id, 'upload_file', 'product', String((await r.clone().json() as any).product_id), { multipart: true }); return r; }));
+add('DELETE', '/api/admin/uploads/:id', A(async (c) => up.abortUpload(c, c.params[0])));
 add('GET', '/api/admin/orders', A(async (c) => json(await adm.adminOrders(c.env, c.url.searchParams))));
 add('GET', '/api/admin/orders/:id', A(async (c) => json(await adm.adminOrder(c.env, int(c.params[0], 0)))));
 add('POST', '/api/admin/orders/:id/refund', A(async (c) => { const r = await ord.refund(c, int(c.params[0], 0)); await adm.audit(c.env, c.user!.id, 'refund', 'order', c.params[0]); return json(r); }));
